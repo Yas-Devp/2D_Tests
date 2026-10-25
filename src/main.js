@@ -8,7 +8,7 @@ const config = {
     parent: 'game-container',
     physics: {
         default: 'arcade',
-        arcade: { debug: false } // Keep false for now, just to see the character clearly
+        arcade: { debug: false }
     },
     scene: {
         preload: preload,
@@ -24,44 +24,77 @@ let cursors;
 let wasd;
 
 function preload() {
-    // The sprite sheet has 48x48 pixel frames
-    this.load.spritesheet('player', 'assets/Adventurer.png', { 
+    this.load.spritesheet('player', 'assets/characters/Adventurer.png', { 
         frameWidth: 48, 
         frameHeight: 48 
     });
+
+    this.load.tilemapTiledJSON('map', 'assets/maps/rooms1.json');
+    
+    this.load.image('doors', 'assets/maps/room1_assets/doors_windows_stairs.png');
+    this.load.image('floors', 'assets/maps/room1_assets/floors.png');
+    this.load.image('furniture', 'assets/maps/room1_assets/furniture1.png');
+    this.load.image('items', 'assets/maps/room1_assets/items.png');
 }
 
 function create() {
-    // --- 1. CREATE ANIMATIONS ---
-    // Based on the layout: Down (Row 1), Left (Row 2), Right (Row 3), Up (Row 4)
-    
-    // IDLE (2 frames)
+    const map = this.make.tilemap({ key: 'map' });
+
+    const tilesetDoors = map.addTilesetImage('doors_stairs', 'doors');
+    const tilesetFloors = map.addTilesetImage('floors', 'floors');
+    const tilesetFurniture = map.addTilesetImage('furniture1', 'furniture');
+    const tilesetItems = map.addTilesetImage('items', 'items');
+
+    const floorLayer = map.createLayer('floor', [tilesetFloors, tilesetDoors, tilesetFurniture], 0, 0);
+    const wallsLayer = map.createLayer('walls', [tilesetFloors, tilesetDoors, tilesetFurniture], 0, 0);
+
+    //here furnitures are in Group so I used 1 and 2 indexes
+    const furnitureLayer = map.createLayer(1, [tilesetFloors, tilesetDoors, tilesetFurniture], 0, 0);
+    const furniture2Layer = map.createLayer(2, [tilesetFloors, tilesetDoors, tilesetFurniture], 0, 0);
+
+    const itemsLayer = map.createLayer('items', [tilesetItems, tilesetDoors, tilesetFurniture], 0, 0);
+
+    //idle
     this.anims.create({ key: 'idle-down', frames: this.anims.generateFrameNumbers('player', { start: 0, end: 1 }), frameRate: 2, repeat: -1 });
     this.anims.create({ key: 'idle-left', frames: this.anims.generateFrameNumbers('player', { start: 2, end: 3 }), frameRate: 2, repeat: -1 });
     this.anims.create({ key: 'idle-right', frames: this.anims.generateFrameNumbers('player', { start: 4, end: 5 }), frameRate: 2, repeat: -1 });
     this.anims.create({ key: 'idle-up', frames: this.anims.generateFrameNumbers('player', { start: 6, end: 7 }), frameRate: 2, repeat: -1 });
 
-    // WALK (4 frames)
+    //walking
     this.anims.create({ key: 'walk-down', frames: this.anims.generateFrameNumbers('player', { start: 8, end: 11 }), frameRate: 10, repeat: -1 });
     this.anims.create({ key: 'walk-left', frames: this.anims.generateFrameNumbers('player', { start: 12, end: 15 }), frameRate: 10, repeat: -1 });
     this.anims.create({ key: 'walk-right', frames: this.anims.generateFrameNumbers('player', { start: 16, end: 19 }), frameRate: 10, repeat: -1 });
     this.anims.create({ key: 'walk-up', frames: this.anims.generateFrameNumbers('player', { start: 20, end: 23 }), frameRate: 10, repeat: -1 });
 
-    // --- 2. CREATE PLAYER ---
-    player = this.physics.add.sprite(400, 300, 'player').setScale(2); // Scale up for better visibility
-    player.setCollideWorldBounds(true);
-    player.play('idle-down'); // Start facing down
 
-    // --- 3. INPUTS ---
+    player = this.physics.add.sprite(200, 200, 'player').setScale(1.5); 
+    player.setCollideWorldBounds(true);
+    player.play('idle-down'); 
+    
+
+    if (wallsLayer) this.physics.add.collider(player, wallsLayer);
+    if (furnitureLayer) this.physics.add.collider(player, furnitureLayer);
+    if (itemsLayer) this.physics.add.collider(player, itemsLayer);
+
+
+    const mapWidth = map.widthInPixels;
+    const mapHeight = map.heightInPixels;
+
+    this.physics.world.setBounds(0, 0, mapWidth, mapHeight);
+
+    this.cameras.main.setBounds(0, 0, mapWidth, mapHeight);
+
+    this.cameras.main.startFollow(player);
+    this.cameras.main.setZoom(2);
+
     cursors = this.input.keyboard.createCursorKeys();
     wasd = this.input.keyboard.addKeys('W,A,S,D');
 }
 
 function update() {
     const speed = 150;
-    player.setVelocity(0); // Stop moving every frame
+    player.setVelocity(0);
 
-    // --- MOVEMENT & ANIMATION ---
     if (cursors.left.isDown || wasd.A.isDown) {
         player.setVelocityX(-speed);
         player.anims.play('walk-left', true);
@@ -79,8 +112,6 @@ function update() {
         player.anims.play('walk-down', true);
     } 
     else {
-        // If no keys are pressed, play idle animation based on the last direction
-        // Phaser remembers the last animation key automatically
         const currentAnim = player.anims.currentAnim ? player.anims.currentAnim.key : 'idle-down';
         if (currentAnim.includes('left')) player.anims.play('idle-left', true);
         else if (currentAnim.includes('right')) player.anims.play('idle-right', true);
