@@ -8,7 +8,7 @@ const config = {
     parent: 'game-container',
     physics: {
         default: 'arcade',
-        arcade: { debug: false }
+        arcade: { debug: true }
     },
     scene: {
         preload: preload,
@@ -72,6 +72,18 @@ function create() {
     player.play('idle-down'); 
     
 
+    if (wallsLayer) {
+        wallsLayer.setCollisionByExclusion([-1]);
+    }
+    
+    if (furnitureLayer) {
+        furnitureLayer.setCollisionByExclusion([-1]);
+    }
+    
+    if (furniture2Layer) {
+        furniture2Layer.setCollisionByExclusion([-1]);
+    }
+
     if (wallsLayer) this.physics.add.collider(player, wallsLayer);
     if (furnitureLayer) this.physics.add.collider(player, furnitureLayer);
     if (itemsLayer) this.physics.add.collider(player, itemsLayer);
@@ -86,6 +98,8 @@ function create() {
 
     this.cameras.main.startFollow(player);
     this.cameras.main.setZoom(2);
+    player.body.setSize(9, 9);
+    player.body.setOffset(20, 30);
 
     cursors = this.input.keyboard.createCursorKeys();
     wasd = this.input.keyboard.addKeys('W,A,S,D');
