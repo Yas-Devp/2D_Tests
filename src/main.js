@@ -76,6 +76,7 @@ function create() {
             repeat: -1
         });
 
+    //to me : anim('anim-name',start-frame , end-frame,frame-rate);
     anim('idle-down', 0, 1, 2);
     anim('idle-left', 2, 3, 2);
     anim('idle-right', 4, 5, 2);
@@ -86,7 +87,7 @@ function create() {
     anim('walk-right', 16, 19, 10);
     anim('walk-up', 20, 23, 10);
 
-    // Player
+    //Player
     player = this.physics.add.sprite(200, 200, 'player').setScale(1.5);
     player.setCollideWorldBounds(true);
     player.play('idle-down');
